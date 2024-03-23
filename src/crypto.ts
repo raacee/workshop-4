@@ -130,7 +130,8 @@ export async function rsaDecrypt(
       privateKey,
       encryptedData
   );
-  return new TextDecoder().decode(decryptedData);
+  const decryptedText = new TextDecoder().decode(new Uint8Array(decryptedData));
+  return arrayBufferToBase64(new TextEncoder().encode(decryptedText));
 }
 
 
