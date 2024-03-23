@@ -1,13 +1,14 @@
-import bodyParser from "body-parser";
-import express, {Request, Response} from "express";
-import {REGISTRY_PORT} from "../config";
+import express, { Request, Response } from "express";
+import { REGISTRY_PORT } from "../config";
 
-export type Node = { nodeId: number; pubKey: string };
+export type Node = { nodeId: number; pubKey: string; privateKey: string };
 
 export type RegisterNodeBody = {
   nodeId: number;
   pubKey: string;
+  privateKey: string;
 };
+
 export type GetNodeRegistryBody = {
   nodes: Node[];
 };
@@ -15,36 +16,39 @@ export type GetNodeRegistryBody = {
 export async function launchRegistry() {
   const _registry = express();
   _registry.use(express.json());
-  _registry.use(bodyParser.json());
-  const nodes: Node[] = []
+
+  const nodes: Node[] = [];
 
   // Implement the status route
   _registry.get("/status", (req: Request, res: Response) => {
     res.send("live");
   });
 
-  _registry.post("/registerNode", (req,res)=>{
-    try{
+  _registry.post("/registerNode", (req, res) => {
+    try {
       // @ts-ignore
-      nodes.push(req.body)
-      res.send(201)
+      const newNode: Node = req.body;
+      nodes.push(newNode);
+      res.sendStatus(201);
+    } catch (e) {
+      res.sendStatus(500);
     }
-    catch (e){
-      res.send(500)
+  });
+
+  _registry.get("/getPrivateKey", (req, res) => {
+    const id = req.query.id;
+    // @ts-ignore
+    const node = nodes.find((node) => node.nodeId === id);
+    if (node) {
+      res.send({result: node.privateKey});
+    } else {
+      res.sendStatus(404);
     }
-  })
+  });
 
-  _registry.get("/getPrivateKey", (req,res)=>{
-    const id = req.body.id
-    res.send({
-      // @ts-ignore
-      result: nodes[id].publicKey
-    })
-  })
-
-  _registry.get("/getNodeRegistry", (req,res)=>{
-    res.send(nodes)
-  })
+  _registry.get("/getNodeRegistry", (req, res) => {
+    res.json({nodes});
+  });
 
   return _registry.listen(REGISTRY_PORT, () => {
     console.log(`registry is listening on port ${REGISTRY_PORT}`);
