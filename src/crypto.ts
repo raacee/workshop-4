@@ -28,7 +28,7 @@ type GenerateRsaKeyPair = {
 export async function generateRsaKeyPair(): Promise<GenerateRsaKeyPair> {
   const algorithm = {
     name: "RSA-OAEP",
-    modulusLength: 4096, // RSA key size in bits
+    modulusLength: 2048, // RSA key size in bits
     publicExponent: new Uint8Array([1, 0, 1]), // public exponent value
     hash: "SHA-256", // hash function used for OAEP
   };
@@ -141,13 +141,13 @@ export async function rsaDecrypt(
 // Generates a random symmetric key
 export async function createRandomSymmetricKey(): Promise<webcrypto.CryptoKey> {
   const algorithm = {
-    name: "AES-GCM",
+    name: "AES-CBC",
     length: 256, // key length in bits
   };
   return await webcrypto.subtle.generateKey(
-      algorithm,
-      true, // whether the key is extractable
-      ["encrypt", "decrypt"] // key usages
+    algorithm,
+    true, // whether the key is extractable
+    ["encrypt", "decrypt"] // key usages
   );
 }
 
@@ -161,17 +161,17 @@ export async function exportSymKey(key: webcrypto.CryptoKey): Promise<string> {
 
 // Import a base64 string format to its crypto native format
 export async function importSymKey(
-    strKey: string
+  strKey: string
 ): Promise<webcrypto.CryptoKey> {
   const keyData = base64ToArrayBuffer(strKey);
   return await webcrypto.subtle.importKey(
-      "raw",
-      keyData,
-      {
-        name: "AES-GCM",
-      },
-      true,
-      ["encrypt", "decrypt"]
+    "raw",
+    keyData,
+    {
+      name: "AES-CBC",
+    },
+    true,
+    ["encrypt", "decrypt"]
   );
 }
 
@@ -182,10 +182,10 @@ export async function symEncrypt(
     data: string
 ): Promise<string> {
   const dataUint8Array = new TextEncoder().encode(data);
-  const iv = webcrypto.getRandomValues(new Uint8Array(12)); // generate a random initialization vector
+  const iv = webcrypto.getRandomValues(new Uint8Array(16)); // generate a random initialization vector
   const encryptedData = await webcrypto.subtle.encrypt(
       {
-        name: "AES-GCM",
+        name: "AES-CBC",
         iv: iv,
       },
       key,
@@ -208,7 +208,7 @@ export async function symDecrypt(
   const key = await importSymKey(strKey);
   const decryptedData = await webcrypto.subtle.decrypt(
       {
-        name: "AES-GCM",
+        name: "AES-CBC",
         iv: iv,
       },
       key,
